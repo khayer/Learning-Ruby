@@ -1,0 +1,5 @@
+def addNumbers (a, b)
+	a + b
+end
+
+c = addNumbers(5,10)
