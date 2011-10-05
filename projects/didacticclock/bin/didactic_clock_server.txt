@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require 'sinatra'
+require 'didacticclock/time_keeper'
+
+set :run,true
+
+get '/' do
+	time_keeper = Didacticclock::TimeKeeper.new
+	return time_keeper.verbose_time
+end

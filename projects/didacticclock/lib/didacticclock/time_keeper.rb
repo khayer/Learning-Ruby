@@ -1,4 +1,4 @@
-module DidacticClock
+module Didacticclock
 	class TimeKeeper
 		def verbose_time
 			time = Time.now
