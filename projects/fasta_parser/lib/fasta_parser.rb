@@ -3,56 +3,70 @@ require "fasta_parser/version"
 module MyParser
 
   class FastaParser
-
-
     
+     
     def initialize()
-      @filename = ""
+      # needed to be able to access the file again
+      @filehandler = nil
+      # positions hold the pointer positions of the header
       @list_of_positions = []
+      # this is importan for iteration()
       @current_iteration = 0
     end
 
-    attr_accessor:filename
-    attr_accessor:list_of_positions
-    attr_accessor:current_iteration 
+    def list_of_positions()
+      @list_of_positions
+    end
 
-    # 1) Open a FASTA file by passing the path as a String. E.g. in the same 
-    # you open a file
-    ## 
+    def current_iteration()
+      @current_iteration
+    end
 
+    
+    # opens a FASTA file by passing the path as a String and saves the details 
     def open(filename)
-      @filename = filename
-      input = File.new(filename)
-      ## This should return an array of pointer positions so the user is 
-      ## able to iterate through all the entries
+      
+      @filehandler = File.new(filename)
+      
       list_of_positions = []
-
-      pos = input.pos
-      input.each do |entry|   
-        
-        if entry.include? ">"
-          list_of_positions << pos
-        end 
-        pos = input.pos
-         
+      pos = @filehandler.pos
+      
+      @filehandler.each do |entry|   
+          if entry.include? ">"
+            list_of_positions << pos
+          end 
+        pos = @filehandler.pos
       end
 
-      input.close
-       
-
       @list_of_positions = list_of_positions
+
+
     end
 
     # This method returns the entry matching the current_iteration number
-    # At the end it increases the current_iteration by 1, but only if there is a 
-    # next one
-    def iterate()
-      f = File.new(@filename)
-      f.seek(@list_of_positions[@current_iteration], IO::SEEK_SET)
+    def next()
+      
+      @filehandler.seek(@list_of_positions[@current_iteration], IO::SEEK_SET)
+      
+      entry = make_entry(@filehandler)
+
+      if @list_of_positions.length > @current_iteration
+          @current_iteration += 1
+      else
+         puts "No more entries left after this one!"
+      end  
+
+      return entry
+    end
+
+    # Now the actual iterator
+
+
+    ## Helper Method: make_entry; Makes an Entry object to the current file-position
+    def make_entry(f)
       
       header = f.readline
-      f.seek(@list_of_positions[@current_iteration], IO::SEEK_SET)
-      ## Now the sequence
+      
       sequence =[]
       f.each do |line|
         unless line.include? ">"
@@ -61,52 +75,97 @@ module MyParser
           break
         end
       end
-
-
-
-
-      if @list_of_positions.length > @current_iteration
-          @current_iteration += 1
-      else
-          "No more entries left after this one!"
-      end
-
       entry = Entry.new(header,sequence)
 
+      entry.gi_num()
+      entry.accession_num()
       return entry
     end
+
+    ### --------- extra credit ----------- ###
+    
+    # returns x'th entry in the file
+    def entry_num(x)
+      
+      if x < 1
+        raise "Invalid entry number!"
+      end
+
+      if x > @list_of_positions.length()
+        raise "There are only #{@list_of_positions.length} entries"
+      end
+
+      
+      # 1-based
+      x -= 1
+      
+      @filehandler.seek(@list_of_positions[x], IO::SEEK_SET)
+      entry = make_entry(@filehandler)
+    end
+
+    # How many entries are in the file?
+    def count()
+      @list_of_positions.length
+    end
+
+    # Returns first entry
+    def first()
+      
+      @filehandler.seek(@list_of_positions[0], IO::SEEK_SET)
+      entry = make_entry(@filehandler)
+    end
+
+    # Returns last entry
+    def last()
+      @filehandler.seek(@list_of_positions[-1], IO::SEEK_SET)
+      entry = make_entry(@filehandler)
+    end
+
   end
 
 
-  # Parses the entry into a class "Entry" that has methods to 
-  # return the GI number, the accession, the sequence without new lines,
-  # and be able to print the entry back out in the same format it 
-  # into parsing
   class Entry
     
-    def initialize(header, sequence)
+    def initialize(header,sequence, gi_num=nil, accession_num=nil )
+      # Header is ">XX|GGGGGGGG|XXX|AAAAAAAAAAA| ..."
       @header = header
-      @sequence = sequence
+      @gi_num = gi_num
+      @accession = accession_num
+      @sequence = sequence.join
+    end
+
+    def header()
+      @header
     end
 
     # Setter and Getter methods
     attr_accessor:header
     attr_accessor:sequence
 
-    def getGInum()
-      gi_num = @header[4..11] 
+    # returns the GI number
+    def gi_num()
+      @gi ||=  @header[4..11] 
     end
 
-    def getAccession()
-      gi_num = @header[17..27] 
+    
+
+    def gi_num=(gi)
+      @gi = gi
+    end
+      
+    
+    # returns the accession number
+    def accession_num()
+      accession ||= @header[17..27] 
     end
 
-    ##### not done !!! ######
-    def getSequence()
-      #sequence = @sequence.to_s
-      #sequence = sequence.tr_s("\n","")
+    # Returns the sequence of the entry without "\n"
+    def sequence()
+      seq = @sequence
+      seq.delete("\n")
     end
 
+    # The entry is printed as seen in the original file
     def printEntry()
       puts @header
       puts @sequence
