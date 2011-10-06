@@ -207,7 +207,6 @@ module MyParser
       while true 
         unless header[i] == "|"
           accession_num << header[i]
-          #return gi_num
         else
           break
         end
