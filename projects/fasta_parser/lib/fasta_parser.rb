@@ -3,6 +3,7 @@ require "fasta_parser/version"
 module MyParser
 
   class FastaParser
+    include Enumerable
     
      
     def initialize()
@@ -12,6 +13,7 @@ module MyParser
       @list_of_positions = []
       # this is importan for iteration()
       @current_iteration = 0
+      @entries = []
     end
 
     def list_of_positions()
@@ -20,6 +22,10 @@ module MyParser
 
     def current_iteration()
       @current_iteration
+    end
+
+    def add_entry(entry)
+      @entries << entry
     end
 
     
@@ -59,7 +65,11 @@ module MyParser
       return entry
     end
 
+
     # Now the actual iterator
+    def each &block
+      @entries.each {|entry| block.call(entry)}
+    end
 
 
     ## Helper Method: make_entry; Makes an Entry object to the current file-position
@@ -79,6 +89,7 @@ module MyParser
 
       entry.gi_num()
       entry.accession_num()
+
       return entry
     end
 
@@ -129,34 +140,82 @@ module MyParser
     def initialize(header,sequence, gi_num=nil, accession_num=nil )
       # Header is ">XX|GGGGGGGG|XXX|AAAAAAAAAAA| ..."
       @header = header
-      @gi_num = gi_num
-      @accession = accession_num
+      
+      
       @sequence = sequence.join
+      @accession = accession_num
+      @gi_num = gi_num
     end
 
     def header()
       @header
     end
 
-    # Setter and Getter methods
-    attr_accessor:header
-    attr_accessor:sequence
+    
 
     # returns the GI number
     def gi_num()
-      @gi ||=  @header[4..11] 
+
+      gi_num = String.new
+      header = []
+      header = @header.split(//)
+      i = header.index("|") + 1
+      
+     
+      while true 
+        unless header[i] == "|"
+          gi_num << header[i]
+          #return gi_num
+        else
+          break
+        end
+        i += 1
+      end
+      
+      
+      @gi_num ||= gi_num  
+
+      
     end
 
     
 
     def gi_num=(gi)
-      @gi = gi
+      @gi_num = gi
     end
       
     
     # returns the accession number
     def accession_num()
-      accession ||= @header[17..27] 
+
+      accession_num = String.new
+      header = []
+      header = @header.split(//)
+      # Header is         "...|GGGGGGGG         | ... |AAAAAAAAAAA| ..."
+      i = header.index("|") +  @gi_num.length + 2
+
+      while true 
+        unless header[i] == "|"
+          i += 1
+        else
+          break
+        end  
+      end
+
+      i += 1
+
+      while true 
+        unless header[i] == "|"
+          accession_num << header[i]
+          #return gi_num
+        else
+          break
+        end
+        i += 1
+      end
+
+
+      @accession_num ||= accession_num 
     end
 
     # Returns the sequence of the entry without "\n"
