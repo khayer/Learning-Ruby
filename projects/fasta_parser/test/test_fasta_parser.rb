@@ -1,99 +1,100 @@
 require 'test/unit'
-require_relative '../lib/fasta_parser'
+require "fasta_parser"
 
-class MyUnitTests < Test::Unit::TestCase
+# require_relative '../lib/fasta_parser'
 
-	def setup()
-		@current_file = MyParser::FastaParser.new()
-		@current_file.open("vertebrate_mammalian.2.rna.fna")
-	end
+# main class names should be the CamelCase equivalent of the snake_case file name
+# unless there is a very good reason to be different.
+class TestFastaParser < Test::Unit::TestCase
 
-	def test_open()
-		 
-	   	assert_equal(@current_file.list_of_positions.length, 14703)
-	   	assert_equal(@current_file.list_of_positions[0],0)
-	end
+  def setup()
+    @fasta_file = FastaParser::File.open(File.join("test", "fixtures", "sequences.fasta"))
+  end
 
-	def test_each()
-		entry1 = @current_file.next()
-	   	entry2 = @current_file.next()
-	   	entry3 = @current_file.next()
-	   	entry4 = @current_file.next()
-	   	@current_file.add_entry(entry1)
-	   	@current_file.add_entry(entry2)
-	   	@current_file.add_entry(entry3)
-	   	@current_file.add_entry(entry4)
+  def test_open()
+    assert(@fasta_file.instance_of?(FastaParser::File), "Not a FastaParser::File instance")
+  end
 
-	   	gi_nums = @current_file.entries.map{|entry| entry.gi_num}
-	   	assert_equal(gi_nums,["73945336", "73945338", "73945340", "73945342"])
+  def test_each()
+    # read in header lines, split by newlines
+    headers = File.read("test/fixtures/headers.txt").split(/\n/)
 
-	end
-	   	
-	def test_next()
-	   	entry = @current_file.next()
-	   	entry2 = @current_file.next()
-	   	assert_equal(entry.header,">gi|73945336|ref|XM_850463.1| PREDICTED: Canis familiaris hypothetical protein LOC606754 (LOC606754), mRNA\n")
-	   	assert_equal(@current_file.current_iteration,2)
-	   	entry3 = @current_file.next()
-	   	entry4 = @current_file.next()
-   	end
-
-	def test_gi_num()
-		entry = @current_file.next()
-	   	entry2 = @current_file.next()
-	   	entry3 = @current_file.next()
-	   	entry4 = @current_file.next()
-	   	giNum = entry2.gi_num()
-	   	assert_equal(giNum,"73945338")
-	   	giNum = entry4.gi_num()
-	   	assert_equal(giNum,"73945342")
-	end
-
-	def test_accession_num()
-		entry = @current_file.next()
-	   	entry2 = @current_file.next()
-	   	entry3 = @current_file.next()
-	   	entry4 = @current_file.next()
-	   	accession = entry2.accession_num()
-	   	assert_equal(accession,"XM_533360.2")
-	   	accession = entry4.accession_num()
-	   	assert_equal(accession,"XM_533363.2")
-	end
-
-	def test_sequence
-		entry = @current_file.next()
-	   	entry2 = @current_file.next()
-	   	entry3 = @current_file.next()
-	   	entry4 = @current_file.next()
-	   	sequence = entry4.sequence()
-	   	assert_equal(sequence,"CCGGGCGCGCGCGGCCCCTCATGTCGTACATGCTCCCACACCTGCACAACGGCTGGCAGGTGGATCAGGCCATCCTGTCGGAGGAGGACCGCGTGGTCGTCATCCGCTTTGGACACGACTGGGACCCCACGTGTATGAAGATGGACGAGGTGCTGTACAGCATCGCGGAGAAGGTTAAAAATTTTGCAGTTATTTATCTTGTGGATATTACAGAAGTGCCTGACTTCAACAAAATGTATGAGTTGTACGATCCGTGTACTGTCATGTTTTTCTTCAGGAACAAGCACATCATGATTGACCTGGGTACTGGTAACAACAACAAGATCAACTGGGCCATGGAAGACAAACAGGAAATGATAGACATCATCGAGACTGTGTACCGGGGCGCCCGGAAGGGCCGCGGCCTGGTTGTGTCTCCAAAGGACTACTCCACGAAATACAGATACTGAGCTCAGCCCAGTCTCCGTGCACAGAAGTGGTGCAGAATTGTTTTCACATGGAAATATTTGAAACTATTTAAAGCCTTAGAGAAAGCGTTTGGAAGTGAATTCAAAGCTCAAGGACTTGGAGGGTCTTTGTAGTAAGGGTTGCATGGCATCAACTCTTTGCCTGTCTGGCCATTGTATTTTTATATTAGCAAATATTTGTAAATACCTAGCTGACACGAATAAAGTACACAGTGATGGAAAGTC")
-	end
-
-	def test_entry_num
-	   	fifth_entry = @current_file.entry_num(5)
-	   	assert_equal(fifth_entry.gi_num(),"73945344")
-	      		   	
-		assert_raise RuntimeError do
-			fifth_entry = @current_file.entry_num(14704)
-			fifth_entry = @current_file.entry_num(-4)
-		end
-	end
-	   	
-	    
-	def test_count
-	   	number_of_elements = @current_file.count()
-	   	assert_equal(number_of_elements,14703)
-   	end
-
-	def test_first
-	   	first_entry = @current_file.first()
-	   	assert_equal(first_entry.accession_num(),"XM_850463.1")
-	end	
+    # Now iterate through the fasta file, testing the order of the headers
+    @fasta_file.each_with_index  do |entry,i|
+      assert(entry.kind_of? FastaParser::Entry)
+      assert(headers[i], entry.header)
+    end
+  end
 
 
-	def test_last
-	   	first_entry = @current_file.last()
-	   	assert_equal(first_entry.accession_num(),"XM_853369.1")
-	end
+  # def test_each()
+
+  #   entry1 = @current_file.next()
+  #     entry2 = @current_file.next()
+  #     entry3 = @current_file.next()
+  #     entry4 = @current_file.next()
+  #     @current_file.add_entry(entry1)
+  #     @current_file.add_entry(entry2)
+  #     @current_file.add_entry(entry3)
+  #     @current_file.add_entry(entry4)
+
+  #     gi_nums = @current_file.entries.map{|entry| entry.gi_num}
+  #     assert_equal(gi_nums,["73945336", "73945338", "73945340", "73945342"])
+
+  # end
+
+  def test_next()
+    @fasta_file.first()
+    # gets the second entry
+    entry = @fasta_file.next()
+    assert_equal(">gi|350529365|ref|NM_001244990.1| Homo sapiens protein phosphatase 1, regulatory subunit 12A (PPP1R12A), transcript variant 4, mRNA",entry.header)
+    assert_equal(2,@fasta_file.current_iteration)
+  end
+
+  def test_gi_num()
+    entry = @fasta_file.first()
+    assert_equal("350529369", entry.gi_num)
+  end
+
+  def test_accession_num()
+    entry = @fasta_file.first()
+    assert_equal("NM_001244992.1", entry.accession)
+  end
+
+
+  def test_sequence
+    expected_sequence = "ACCCGGCGGCAGGAGAGGGGATGAAGATGGCGGACGCGAAGCAGAAGCGGAACGAGCAGCTGAAACGCTGGATCGGCTCCGAGACGGACCTCGAGCCTCCGGTGGTGAAGCGCCAGAAGACCAAGGTGAAGTTCGACGATGGCGCCGTCTTCCTGGCTGCTTGCTCCAATTGATGACAATGTTGATATGGTGAAGTTTCTGGTAGAAAATGGAGCAAATATTAATCAACCTGATAATGAAGGCTGGATACCACTACATGCAGCAGCTTCCTGTGGATATCTTGATATTGCAGAGTTTTTGATTGGTCAAGGAGCACATGTAGGGGCTGTCAACAGTGAAGGAGATACACCTTTAGATATTGCGGAGGAGGAGGCAATGGAAGAGCTACTTCAAAA"
+    entry = @fasta_file.first()
+    assert_equal(expected_sequence, entry.sequence)
+  end
+
+  def test_entry_num
+    fifth_entry = @fasta_file.entry_num(5)
+    assert_equal("349501060",fifth_entry.gi_num())
+  end
+
+  def test_bad_index
+    assert_raise RuntimeError do
+      fifth_entry = @fasta_file.entry_num(14704)
+    end
+    assert_raise RuntimeError do
+      fifth_entry = @fasta_file.entry_num(-4)
+    end
+  end
+  def test_count
+      number_of_elements = @fasta_file.count()
+      assert_equal(number_of_elements,10)
+  end
+
+  # since I had my own test file, I changed below.
+  def test_first
+      first_entry = @fasta_file.first()
+      assert_equal("NM_001244992.1",first_entry.accession())
+  end
+
+  def test_last
+      last_entry = @fasta_file.last()
+      assert_equal("NM_001114122.2",last_entry.accession())
+  end
 
 end
