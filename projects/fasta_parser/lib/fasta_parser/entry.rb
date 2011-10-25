@@ -27,6 +27,16 @@
       end
     end
 
+    def cut_sequence(number)
+        i = 0
+        seq = ""
+        while i < number
+            seq = seq + @sequence[i]
+            i += 1
+        end
+        @sequence = seq
+    end
+
     ## Not needed anymore
     # # returns the GI number
     # def gi_num()

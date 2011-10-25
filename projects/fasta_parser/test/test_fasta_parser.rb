@@ -97,4 +97,25 @@ class TestFastaParser < Test::Unit::TestCase
       assert_equal("NM_001114122.2",last_entry.accession())
   end
 
+  def test_cut_seq()
+    @fasta1 = FastaParser::File.open("100ReadsOf100.fa")
+    z1 = ::File.open("100ReadsOf50.fa", 'w')
+
+    @fasta2 = FastaParser::File.open("200ReadsOf100.fa")
+    z2 = ::File.open("200ReadsOf50.fa", 'w')
+
+    for i in @fasta1.list_of_positions
+      entry = @fasta1.next()
+      entry.cut_sequence(50)
+      z1.write(entry.to_s() + "\n")
+    end
+
+    for i in @fasta2.list_of_positions
+      entry = @fasta2.next()
+      entry.cut_sequence(50)
+      z2.write(entry.to_s() + "\n")
+    end
+
+  end
+
 end
